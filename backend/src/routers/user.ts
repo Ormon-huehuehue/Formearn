@@ -11,10 +11,14 @@ const router = Router();
 
 const prisma  = new PrismaClient();
 
+const access_key = process.env.ACCESS_KEY_ID?? ""
+const secret_key = process.env.SECRET_ACCESS_KEY?? ""
+
 const s3Client = new S3Client({
+    //@ts-ignore
     credentials : {
-        accessKeyId : "AKIA2FJYCJFQMUWAFO4X",
-        secretAccessKey : "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"
+        accessKeyId : access_key,
+        secretAccessKey : secret_key
     },
     region : "eu-north-1"
 })
@@ -24,6 +28,11 @@ const s3Client = new S3Client({
 router.post("/task", authMiddleware, async (req,res)=>{
 
     const body = req.body;
+    //@ts-ignore
+    const userId = req.userId;
+
+    console.log("User id is ", userId)
+
     
     const parseData = createTaskInput.safeParse(body);
 
@@ -33,6 +42,33 @@ router.post("/task", authMiddleware, async (req,res)=>{
         })
     }
 
+    //parse the signature here to ensure the person has paid the amount
+
+    let response = prisma.$transaction(async (tx)=>{
+
+        const response = await tx.task.create({
+            data :{
+                title : parseData.data?.title || "Choose the best thumbnail",
+                amount : "1",
+                signature : parseData.data?.signature || "signature",
+                user_id : userId
+            }
+        })
+
+        console.log("options : ", parseData.data?.options)
+        await tx.option.createMany({
+            data : parseData.data?.options?.map(option=>({
+                image_url : option.image_url ,
+                task_id : response.id
+            })) || []
+        })
+
+        return response
+    })
+
+    res.json({
+        response : response
+    })
 
 })
 

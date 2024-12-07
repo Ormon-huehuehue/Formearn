@@ -44,7 +44,6 @@ model Worker  {
 model Option {
   id       Int     @id @default(autoincrement())
   image_url String  @unique
-  option_id  Int 
   task_id    Int
   task      Task    @relation(fields : [task_id], references: [id])
   submissions   Submission[]

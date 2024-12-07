@@ -9,12 +9,16 @@ export function authMiddleware(req : Request, res : Response, next : NextFunctio
 
     try{
         const decoded = jwt.verify(authHeader, jwtSecret)
-        console.log("jwt verified")
+        console.log("jwt verified : ", decoded)
 
         // @ts-ignore
         if(decoded.userId){
             // @ts-ignore
-            req.userId == decoded.userId;
+            console.log("decoded user : ", decoded.userId)
+            // @ts-ignore
+            req.userId = decoded.userId;
+            // @ts-ignore
+            console.log("req.userId : ", req.userId)
             return next();  
         }
         else{

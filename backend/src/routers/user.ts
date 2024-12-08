@@ -36,6 +36,8 @@ router.post("/task", authMiddleware, async (req,res)=>{
     
     const parseData = createTaskInput.safeParse(body);
 
+    console.log("Parsed Data : ", parseData)
+
     if(!parseData.success){
             res.status(411).json({
             error : "Invalid input"
@@ -44,30 +46,37 @@ router.post("/task", authMiddleware, async (req,res)=>{
 
     //parse the signature here to ensure the person has paid the amount
 
-    let response = prisma.$transaction(async (tx)=>{
+    let response = await prisma.$transaction(async (tx)=>{
 
         const response = await tx.task.create({
             data :{
-                title : parseData.data?.title || "Choose the best thumbnail",
+                title : parseData.data?.title?? "Choose the best thumbnail",
                 amount : "1",
-                signature : parseData.data?.signature || "signature",
+                signature : parseData.data?.signature?? "signature",
                 user_id : userId
             }
         })
 
-        console.log("options : ", parseData.data?.options)
-        await tx.option.createMany({
-            data : parseData.data?.options?.map(option=>({
-                image_url : option.image_url ,
-                task_id : response.id
-            })) || []
-        })
+        console.log("response in response : ", response)
+
+        try{
+
+            await tx.option.createMany({
+                data : parseData.data?.options?.map(option=>({
+                    image_url : option.image_url ,
+                    task_id : response.id
+                })) || []
+            })
+        }
+        catch(e){
+            console.log("Error in creating options : ", e)
+        }
 
         return response
     })
 
     res.json({
-        response : response
+        response : response.id
     })
 
 })

@@ -14,11 +14,9 @@ export function authMiddleware(req : Request, res : Response, next : NextFunctio
         // @ts-ignore
         if(decoded.userId){
             // @ts-ignore
-            console.log("decoded user : ", decoded.userId)
             // @ts-ignore
             req.userId = decoded.userId;
             // @ts-ignore
-            console.log("req.userId : ", req.userId)
             return next();  
         }
         else{

@@ -6,6 +6,7 @@ import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3
 import { jwtSecret } from "..";
 import { authMiddleware } from "../middleware";
 import { createTaskInput } from "../types";
+import { TOTAL_DECIMALS } from "./worker";
 
 const router = Router();
 
@@ -110,7 +111,7 @@ router.post("/task", authMiddleware, async (req,res)=>{
         const response = await tx.task.create({
             data :{
                 title : parseData.data?.title?? "Choose the best thumbnail",
-                amount : "1",
+                amount : 1*TOTAL_DECIMALS,
                 signature : parseData.data?.signature?? "signature",
                 user_id : userId
             }

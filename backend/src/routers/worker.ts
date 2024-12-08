@@ -7,7 +7,12 @@ import { getNextTask } from "../db";
 import { createSubmissioninput } from "../types";
 
 export const jwtSecretWorker = jwtSecret + "worker"
+export const TOTAL_DECIMALS = 1000000000;
+
+
+
 const router = Router();
+
 
 router.post("/signin", async (req,res)=>{
     console.log("Signin request received")
@@ -86,23 +91,44 @@ router.post("/submission", workerMiddleware, async (req,res)=>{
         }
 
 
-        const amount = (Number(task?.amount)/TOTAL_SUBMISSIONS).toString();
+        const amount = (Number(task?.amount)/TOTAL_SUBMISSIONS).toString()
         
         try{
-            const response = await prisma.submission.create({
-                data : {
-                    worker_id : Number(userId),
-                    option_id : Number(parsedData.data?.selection),
-                    task_id : Number(parsedData.data?.task_id),
-                    amount 
-                }
+
+            const submission = await prisma.$transaction(async tx=>{
+                const response = await tx.submission.create({
+                    data : {
+                        worker_id : Number(userId),
+                        option_id : Number(parsedData.data?.selection),
+                        task_id : Number(parsedData.data?.task_id),
+                        amount : Number(amount)
+                    }
+                })
+
+                await tx.worker.update({
+                    where: {
+                        id : userId
+                    },
+                    data : {
+                        pending_amount :{
+                            increment : Number(amount)
+                        }
+                    }
+                })
+
+                return response;
             })
 
+            const nextTask = await getNextTask(Number(userId));
+
             res.json({
-                submission : response
+                submission,
+                nextTask
             })
+
         }
         catch(e){
+            console.log("Error : ", e)
             res.status(411).json({
                 error : "An error occured while making the submission"
             })
@@ -114,6 +140,42 @@ router.post("/submission", workerMiddleware, async (req,res)=>{
             error : "Could not parse data"
         })
     }
+
+})
+
+
+router.get("/balance", workerMiddleware, async (req, res)=>{
+    //@ts-ignore
+    const userId = req.userId;
+
+    const worker = await prisma.worker.findFirst({
+        where : {
+            id : userId
+        }
+    })
+
+    res.json({
+        pendingAmount : worker?.pending_amount,
+        lockedAmount : worker?.locked_amount
+    })
+
+
+
+})
+
+
+router.post("/payout", workerMiddleware, async (req,res)=>{
+    //@ts-ignore
+    const userId = req.userId;
+    const amount = await prisma.worker.findFirst({
+        where :{
+            id : userId
+        }
+    })
+
+
+    //logic here
+
 
 })
 

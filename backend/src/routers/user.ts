@@ -9,7 +9,7 @@ import { createTaskInput } from "../types";
 
 const router = Router();
 
-const prisma  = new PrismaClient();
+export const prisma  = new PrismaClient();
 
 const access_key = process.env.ACCESS_KEY_ID?? ""
 const secret_key = process.env.SECRET_ACCESS_KEY?? ""
@@ -40,6 +40,8 @@ router.get("/task", authMiddleware, async(req,res)=>{
         }
     })
 
+    console.log("taskDetails : ", taskDetails)
+
     if(!taskDetails){
         res.status(404).json({
             message : "You don't have access to this task"
@@ -56,6 +58,8 @@ router.get("/task", authMiddleware, async(req,res)=>{
         }
     })
 
+     console.log("Response : ", response)
+
     const result : Record<string, { 
         count : number,
         option : {
@@ -65,17 +69,19 @@ router.get("/task", authMiddleware, async(req,res)=>{
 
 
     taskDetails?.options.forEach(option=>{
-        result[option.id] = {
-            count : 0,
-            option : {
-                image_url : option.image_url
+        if(!result[option.id]){
+            result[option.id] = {
+                count : 0,
+                option : {
+                    image_url : option.image_url
+                }
             }
         }
     })
 
+    //increasing the count of the votes on each option if they're found in submissions
     response.forEach(submission =>{
         result[submission.option_id].count++
-
     })
 
     res.json(result)
@@ -87,12 +93,9 @@ router.post("/task", authMiddleware, async (req,res)=>{
     //@ts-ignore
     const userId = req.userId;
 
-    console.log("User id is ", userId)
 
     
     const parseData = createTaskInput.safeParse(body);
-
-    console.log("Parsed Data : ", parseData)
 
     if(!parseData.success){
             res.status(411).json({
@@ -116,7 +119,6 @@ router.post("/task", authMiddleware, async (req,res)=>{
         console.log("response in response : ", response)
 
         try{
-
             await tx.option.createMany({
                 data : parseData.data?.options?.map(option=>({
                     image_url : option.image_url ,

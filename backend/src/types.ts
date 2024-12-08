@@ -7,3 +7,8 @@ export const createTaskInput = z.object({
     title : z.string().optional(),
     signature : z.string()
 })
+
+export const createSubmissioninput = z.object({
+    selection : z.number(),
+    task_id : z.number()
+})

@@ -24,6 +24,62 @@ const s3Client = new S3Client({
 })
 
 
+router.get("/task", authMiddleware, async(req,res)=>{
+    //@ts-ignore
+    const userId = req.userId;
+    //@ts-ignore
+    const taskId = req.query.taskId;
+
+    const taskDetails = await prisma.task.findFirst({
+        where: {
+            user_id : Number(userId),
+            id : Number(taskId)
+        },
+        include : {
+            options : true
+        }
+    })
+
+    if(!taskDetails){
+        res.status(404).json({
+            message : "You don't have access to this task"
+        })
+    }
+
+    //Todo : can you make this faster
+    const response = await prisma.submission.findMany({
+        where : {
+            task_id : Number(taskId)
+        },
+        include : {
+            option : true
+        }
+    })
+
+    const result : Record<string, { 
+        count : number,
+        option : {
+            image_url : string
+        }
+    }> = {}
+
+
+    taskDetails?.options.forEach(option=>{
+        result[option.id] = {
+            count : 0,
+            option : {
+                image_url : option.image_url
+            }
+        }
+    })
+
+    response.forEach(submission =>{
+        result[submission.option_id].count++
+
+    })
+
+    res.json(result)
+})
 
 router.post("/task", authMiddleware, async (req,res)=>{
 

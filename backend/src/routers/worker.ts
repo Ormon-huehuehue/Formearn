@@ -167,16 +167,56 @@ router.get("/balance", workerMiddleware, async (req, res)=>{
 router.post("/payout", workerMiddleware, async (req,res)=>{
     //@ts-ignore
     const userId = req.userId;
-    const amount = await prisma.worker.findFirst({
+    const worker = await prisma.worker.findFirst({
         where :{
             id : userId
         }
     })
 
+    if(!worker){
+        res.status(400).json({
+            message : "user not found"
+        })
+    }
+    else{
+        const address = worker?.address;
 
-    //logic here
+        const txnId = "0x123123";
+
+        //add a lock here
+        await prisma.$transaction(async tx=>{
+            await tx.worker.update({
+                where: {
+                    id : userId
+                },
+                data : {
+                    pending_amount :{
+                        decrement : worker?.pending_amount
+                    },
+                    locked_amount :{
+                        increment : worker?.pending_amount
+                    }
+                }
+            })
+
+            
+            await tx.payouts.create({
+                data : {
+                    user_id : userId,
+                    amount : worker.pending_amount,
+                    signature : txnId,
+                    status : "Processing"
+
+                }
+            })
+        })
 
 
+        res.json({
+            message : "Processing payment",
+            amount : worker.pending_amount
+        })
+    }
 })
 
 export default router

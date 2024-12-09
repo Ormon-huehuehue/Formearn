@@ -147,8 +147,8 @@ router.get("/presignedurl",authMiddleware, async (req, res)=>{
     
     const command = new PutObjectCommand({
         Bucket : "formearn", 
-        Key : `Formearn/${userId}/${Math.random()}/image.jpg`,
-        ContentType : "image/jpeg"
+        Key : `Formearn/${userId}/${Date.now()}/image.png`,
+        ContentType : "image/png"
     })
 
     const presignedUrl = await getSignedUrl(s3Client, command, {

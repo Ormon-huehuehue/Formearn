@@ -1,3 +1,3 @@
-export const cloudfrontUrl = process.env.CLOUDFRONT_URL
+export const cloudfrontUrl = "nah dawg"
 
 export const backendUrl = "http://localhost:4000"

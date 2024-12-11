@@ -94,11 +94,11 @@ router.post("/task", authMiddleware, async (req,res)=>{
     //@ts-ignore
     const userId = req.userId;
 
-
     
     const parseData = createTaskInput.safeParse(body);
 
     if(!parseData.success){
+        console.log("zod parsedata error")
             res.status(411).json({
             error : "Invalid input"
         })

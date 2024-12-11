@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState } from 'react'
-//@ts-ignore
-const UploadButton = (handleOnChange : (file: File|undefined)=> void) => {
+
+
+const CustomButton = (handleOnChange : (file: File|undefined)=> void) => {
     const [uploading, setUploading] = useState<Boolean>(false)
 
 
@@ -23,4 +24,4 @@ const UploadButton = (handleOnChange : (file: File|undefined)=> void) => {
   )
 }
 
-export default UploadButton
+export default CustomButton

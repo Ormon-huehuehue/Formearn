@@ -2,9 +2,9 @@ import z from "zod"
 
 export const createTaskInput = z.object({
     options : z.array(z.object({
-        image_url : z.string()
+        image_url : z.string(),
     })),
-    title : z.string().optional(),
+    title : z.string(),
     signature : z.string()
 })
 

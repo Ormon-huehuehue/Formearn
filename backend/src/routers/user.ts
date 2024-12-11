@@ -50,7 +50,7 @@ router.get("/task", authMiddleware, async(req,res)=>{
     }
 
     //Todo : can you make this faster
-    const response = await prisma.submission.findMany({
+    const response = await prisma.submission.findMany({ //counting number of submissions/votes
         where : {
             task_id : Number(taskId)
         },
@@ -58,8 +58,6 @@ router.get("/task", authMiddleware, async(req,res)=>{
             option : true
         }
     })
-
-     console.log("Response : ", response)
 
     const result : Record<string, { 
         count : number,
@@ -85,7 +83,10 @@ router.get("/task", authMiddleware, async(req,res)=>{
         result[submission.option_id].count++
     })
 
-    res.json(result)
+    res.json({
+        result, 
+        taskDetails
+    })
 })
 
 router.post("/task", authMiddleware, async (req,res)=>{
@@ -135,7 +136,7 @@ router.post("/task", authMiddleware, async (req,res)=>{
     })
 
     res.json({
-        response : response.id
+        id : response.id
     })
 
 })

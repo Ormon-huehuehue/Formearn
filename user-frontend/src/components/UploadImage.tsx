@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import axios from "axios"
 import { cloudfrontUrl, backendUrl } from '../../config/config'
 import Image from 'next/image'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
+
 
 const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTczMzU2NTUyN30.n6nIcRZhgdntLh7dCvc7jYHVPz3iKh1HdVSm1ogRJII"
 
@@ -14,7 +15,9 @@ const UploadImage = () => {
 
   const [uploadURL, setUploadURL] = useState<String | null>(null);
   const [title, setTitle] = useState<String>()
-  const router = useRouter();
+  const router = useRouter()
+
+  
 
   const fetchPresignedUrl = async ()=>{
     try{
@@ -105,7 +108,8 @@ const UploadImage = () => {
         }
         else{
             console.log("task uploaded : ", response.data)
-            //router.push
+            
+            router.push(`/task/${response.data.id}`)
 
             
         }

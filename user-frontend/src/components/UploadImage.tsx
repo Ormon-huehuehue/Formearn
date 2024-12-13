@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from "axios"
 import { cloudfrontUrl, backendUrl } from '../../config/config'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 
@@ -78,15 +77,6 @@ const UploadImage = () => {
     e.preventDefault()
 
 
-    const data = {
-        options : images.map((image)=> (
-            {
-                image_url : image
-            })),
-        signature:"hello",      //replace this signature with the signature of the transaction later on
-        title : "my title"
-    }
-
     try{   
         const response = await axios.post(`${backendUrl}/v1/user/task`,
             {
@@ -94,7 +84,7 @@ const UploadImage = () => {
                     image_url : image
                 })),
                 signature : "hello",
-                title : "my title"
+                title : title
             },
             {
                 headers : {

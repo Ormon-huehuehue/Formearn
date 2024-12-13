@@ -27,6 +27,7 @@ export function authMiddleware(req : Request, res : Response, next : NextFunctio
         }
     }
     catch(e){
+        console.log("failed authorization")
         res.status(403).json({
             message : "You are not logged in"
         })
@@ -39,6 +40,7 @@ export function workerMiddleware(req : Request, res : Response, next : NextFunct
     console.log("auth middleware called ")
 
     try{
+        console.log("Tyring to decode")
         const decoded = jwt.verify(authHeader, jwtSecretWorker)
         console.log("jwt verified : ", decoded)
 

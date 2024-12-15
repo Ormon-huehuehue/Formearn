@@ -26,7 +26,6 @@ const Appbar = () => {
         signature,
         publicKey
       });
-
       console.log("Response : ", response.data)
 
       localStorage.setItem("token", response.data.token)
@@ -34,9 +33,6 @@ const Appbar = () => {
     catch(e){
       console.log("Couln't sign message")
     }
-
-
-
   }
 
   useEffect(()=>{

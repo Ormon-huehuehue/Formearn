@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import axios from "axios"
 import { cloudfrontUrl, backendUrl } from '../../config/config'
 import { useRouter } from 'next/navigation'
-
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { Connection, SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 
 
 
@@ -13,10 +14,16 @@ const UploadImage = () => {
 
   const [uploadURL, setUploadURL] = useState<String | null>(null);
   const [title, setTitle] = useState<String>()
+  const [txSignature, setTxSignature] = useState("");
+  const [processing, setProcessing] = useState<boolean>(false)
+
   const router = useRouter()
+  const {publicKey, sendTransaction} = useWallet()
+  const {connection} = useConnection()
+
+
 
   const [token, setToken] = useState<string | null>(null)
-  
 
   const fetchPresignedUrl = async (token : string | null)=>{
     try{
@@ -48,7 +55,7 @@ const UploadImage = () => {
     },[token])
 
     useEffect(()=>{
-        if(token){
+        if(token && publicKey){
             fetchPresignedUrl(token);
         }
     },[token])
@@ -112,8 +119,6 @@ const UploadImage = () => {
             console.log("task uploaded : ", response.data)
             
             router.push(`/task/${response.data.id}`)
-
-            
         }
     }
     catch(e){
@@ -121,16 +126,51 @@ const UploadImage = () => {
     }
   }
 
+  const makePayment = async()=>{
+    const transaction = new Transaction().add(
+        SystemProgram.transfer({
+            fromPubkey : publicKey!,
+            toPubkey : new PublicKey("8SExAm8QT4bQxCS3WvjsMYtAuGJVG2Bc7ovpYEuWURpP"),
+            lamports : 100000000
+
+        })
+    )
+
+    const {
+        context: { slot: minContextSlot },
+        value: { blockhash, lastValidBlockHeight }
+    } = await connection.getLatestBlockhashAndContext();
+
+    const signature = await sendTransaction(transaction, connection, { minContextSlot });
+
+    setProcessing(true)
+
+    await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+    setTxSignature(signature);
+    setProcessing(false)
+
+  }
+
   return (
     <div className ="flex flex-col font-mono">
         <div className="w-full px-10 py-10 flex flex-col justify-center items-center ">
             <h1 className= "text-6xl py-10 font-mono "> CREATE A TASK</h1>
-            <form className = "w-[50%]" onSubmit={handleSubmit}>
+            <form className = "w-[50%]">
                 <h2 className = "text-lg py-2">Enter task details</h2>
                 <input placeholder="Select the thumbnail that's thumbnailing" className="text-sm w-full h-7 px-2 py-2 rounded-md text-black"
                 onChange={(e)=>setTitle(e.target.value)}/>
                 <div className= "w-full flex justify-center py-4">
-                    <button type="submit" className= "bg-slate-700 p-5 rounded-md font-mono text-white text-lg"> Submit task</button>
+                    {/* <button type="submit" className= "bg-slate-700 p-5 rounded-md font-mono text-white text-lg"> Submit task</button> */}
+                    {/* add a pay 0.1sol button here */}
+                    <div className="flex justify-center">   
+                {!publicKey ? <h1 className=  'py-5 font-mono text-sm text-center font-semibold text-red-400'>Please connect your wallet to start posting new tasks</h1> :null}    
+                {!txSignature && publicKey ? <button onClick={makePayment} type="button" className="mt-4 text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
+                    {processing ? "Processing Transaction" : "Pay 0.1 SOL"}
+                </button> : null}
+                {txSignature && publicKey ? <button onClick={handleSubmit} type="button" className="mt-4 text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">
+                    Submit Task
+                </button> : null}
+        </div>
                 </div>
             </form>
         </div>

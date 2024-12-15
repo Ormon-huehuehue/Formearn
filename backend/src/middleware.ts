@@ -6,6 +6,9 @@ import { jwtSecretWorker } from "./routers/worker";
 export function authMiddleware(req : Request, res : Response, next : NextFunction){
     const authHeader =  req.headers["authorization"] ?? "";
 
+     
+
+
     console.log("auth middleware called ")
 
     try{

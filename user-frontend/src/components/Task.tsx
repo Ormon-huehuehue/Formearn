@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server'
 import React, { use, useEffect, useState } from 'react'
 import { backendUrl } from '../../config/config'
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTczMzU2NTUyN30.n6nIcRZhgdntLh7dCvc7jYHVPz3iKh1HdVSm1ogRJII"
+const token = localStorage.getItem("token")
 
 
 
@@ -47,7 +47,7 @@ const Task = ({taskId}: { taskId : string}) => {
                 setTaskDetails(data.taskDetails)
                 setResult(data.result)
                 
-                console.log("result : ", data.result)
+                console.log("result : ", data.result) 
                 console.log("Task Details : ", data.taskDetails)
             })
         },5000)

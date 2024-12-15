@@ -43,11 +43,11 @@ router.post("/signin", async (req,res)=>{
             }
         })    
         
-
+        
         const token = jwt.sign({
             userId : user.id
         }, jwtSecretWorker)
-
+        
         res.json({token})
     }
 

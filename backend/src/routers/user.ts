@@ -7,6 +7,10 @@ import { jwtSecret } from "..";
 import { authMiddleware } from "../middleware";
 import { createTaskInput } from "../types";
 import { TOTAL_DECIMALS } from "./worker";
+import nacl from "tweetnacl";
+import { PublicKey } from "@solana/web3.js";
+import { decodeUTF8 } from "tweetnacl-util";
+
 
 const router = Router();
 
@@ -167,11 +171,33 @@ router.get("/presignedurl",authMiddleware, async (req, res)=>{
 router.post("/signin",async  (req,res)=>{
     console.log("Signin request received")
     //TODO : Add sign verification logic here
-    const hardCodedWalletAddress = "FXHfqca1fKpFKB5bcNKGAznLqWo1RR2MTtnVcQnLSrEn"
+
+    const {publicKey, signature} = req.body
+
+    const message = "Sign into formearn"
+    const messageBytes = decodeUTF8(message)
+    
+
+    const result = nacl.sign.detached.verify(
+        messageBytes,
+        new Uint8Array(signature.data),
+        new PublicKey(publicKey).toBytes()
+    )
+
+    if(!result){
+        res.status(411).json({
+            message: "Incorrect signature"
+        })
+    }
+
+    console.log("Result :", result)
+
+    console.log("Public key : ",publicKey)
+    console.log("Type of public key : ", typeof(publicKey))
 
     const existingUser =  await prisma.user.findFirst({
         where : {
-            address : hardCodedWalletAddress
+            address : publicKey
         }
     })
 
@@ -183,9 +209,10 @@ router.post("/signin",async  (req,res)=>{
         res.json({token})
     }
     else{
+        console.log("Creating new user")
         const user = await prisma.user.create({
             data : {
-                address : hardCodedWalletAddress
+                address : publicKey
             }
         })    
         

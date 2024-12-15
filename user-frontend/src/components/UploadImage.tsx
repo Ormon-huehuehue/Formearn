@@ -6,7 +6,6 @@ import { cloudfrontUrl, backendUrl } from '../../config/config'
 import { useRouter } from 'next/navigation'
 
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTczMzU2NTUyN30.n6nIcRZhgdntLh7dCvc7jYHVPz3iKh1HdVSm1ogRJII"
 
 
 const UploadImage = () => {
@@ -16,10 +15,14 @@ const UploadImage = () => {
   const [title, setTitle] = useState<String>()
   const router = useRouter()
 
+  const [token, setToken] = useState<string | null>(null)
   
 
-  const fetchPresignedUrl = async ()=>{
+  const fetchPresignedUrl = async (token : string | null)=>{
     try{
+        if(!token){
+            console.error("Token not present")
+        }
         const response = await  axios.get(`${backendUrl}/v1/user/presignedurl`, { 
             headers : {
                 "Authorization" : token
@@ -38,12 +41,21 @@ const UploadImage = () => {
 }
 
     useEffect(()=>{
-        fetchPresignedUrl();
-    },[])
+        const tokenInLocalStorage = localStorage.getItem("token")
+        if(tokenInLocalStorage){
+            setToken(tokenInLocalStorage)
+        }
+    },[token])
+
+    useEffect(()=>{
+        if(token){
+            fetchPresignedUrl(token);
+        }
+    },[token])
 
   const handleOnChange = async (file : File | undefined)=>{
     //generate a new presigned url everytime a new file is being uploaded
-    fetchPresignedUrl();
+    fetchPresignedUrl(token);
 
     console.log("Image: ", file);
     

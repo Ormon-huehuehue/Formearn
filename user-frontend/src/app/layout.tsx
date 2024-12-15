@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Appbar from "@/components/Appbar";
+import SolanaProvider from "@/lib/SolanaProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,8 +30,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-        <Appbar/>
-        {children}
+        <SolanaProvider>
+          <Appbar/>
+          {children}
+        </SolanaProvider>
       </body>
     </html>
   );

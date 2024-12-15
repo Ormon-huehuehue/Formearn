@@ -5,7 +5,7 @@ import axios from "axios"
 import { cloudfrontUrl, backendUrl } from '../../config/config'
 import { useRouter } from 'next/navigation'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { Connection, SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
+import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 
 
 
@@ -16,6 +16,8 @@ const UploadImage = () => {
   const [title, setTitle] = useState<String>()
   const [txSignature, setTxSignature] = useState("");
   const [processing, setProcessing] = useState<boolean>(false)
+  const [token, setToken] = useState<string | null>(null)
+
 
   const router = useRouter()
   const {publicKey, sendTransaction} = useWallet()
@@ -23,7 +25,6 @@ const UploadImage = () => {
 
 
 
-  const [token, setToken] = useState<string | null>(null)
 
   const fetchPresignedUrl = async (token : string | null)=>{
     try{

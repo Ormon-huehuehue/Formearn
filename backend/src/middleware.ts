@@ -6,9 +6,6 @@ import { jwtSecretWorker } from "./routers/worker";
 export function authMiddleware(req : Request, res : Response, next : NextFunction){
     const authHeader =  req.headers["authorization"] ?? "";
 
-     
-
-
     console.log("auth middleware called ")
 
     try{
@@ -17,7 +14,6 @@ export function authMiddleware(req : Request, res : Response, next : NextFunctio
 
         // @ts-ignore
         if(decoded.userId){
-            // @ts-ignore
             // @ts-ignore
             req.userId = decoded.userId;
             // @ts-ignore
@@ -40,18 +36,18 @@ export function authMiddleware(req : Request, res : Response, next : NextFunctio
 export function workerMiddleware(req : Request, res : Response, next : NextFunction){
     const authHeader =  req.headers["authorization"] ?? "";
 
-    console.log("auth middleware called ")
+    console.log("worker auth middleware called ")
 
     try{
-        console.log("Tyring to decode")
+        console.log("Trying to decode")
         const decoded = jwt.verify(authHeader, jwtSecretWorker)
         console.log("jwt verified : ", decoded)
 
         // @ts-ignore
         if(decoded.userId){
             // @ts-ignore
-            // @ts-ignore
             req.userId = decoded.userId;
+            console.log("logged in")
             // @ts-ignore
             return next();  
         }

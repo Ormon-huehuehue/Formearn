@@ -1,34 +1,12 @@
 "use client"
 
 import axios from 'axios'
-import { NextRequest } from 'next/server'
-import React, { use, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { backendUrl } from '../../config/config'
 
-const token = localStorage.getItem("token")
-
-
-
-const fetchTaskDetails = async (taskId : string)=>{
-    
-    const response = await axios.get(`${backendUrl}/v1/user/task?taskId=${taskId}`,{
-        headers : {
-            "Authorization" : token
-        }
-    });
-
-    if(response.data){
-        console.log("Response : ", response.data);
-        return response.data
-    }
-    else{
-        console.error("An error occurred while fetching the task details")
-    }
-
-}
 
 const Task = ({taskId}: { taskId : string}) => {
-
+    const token = localStorage.getItem("token")
 
 
     const [result, setResult] = useState<Record<string,{
@@ -39,6 +17,23 @@ const Task = ({taskId}: { taskId : string}) => {
 
     const [taskDetails, setTaskDetails] = useState<{title? : string}>({})
 
+    const fetchTaskDetails = async (taskId : string)=>{
+    
+        const response = await axios.get(`${backendUrl}/v1/user/task?taskId=${taskId}`,{
+            headers : {
+                "Authorization" : token
+            }
+        });
+    
+        if(response.data){
+            console.log("Response : ", response.data);
+            return response.data
+        }
+        else{
+            console.error("An error occurred while fetching the task details")
+        }
+    
+    }
 
     useEffect(()=>{
         setInterval(()=>{

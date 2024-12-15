@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Response, Router } from "express";
 import jwt from "jsonwebtoken"
 import {PrismaClient} from "@prisma/client";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -10,7 +10,7 @@ import { TOTAL_DECIMALS } from "./worker";
 import nacl from "tweetnacl";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { decodeUTF8 } from "tweetnacl-util";
-import { Signature } from "typescript";
+
 
 
 const router = Router();
@@ -98,92 +98,79 @@ router.get("/task", authMiddleware, async(req,res)=>{
     })
 })
 
-router.post("/task", authMiddleware, async (req,res)=>{
-
+//@ts-ignore
+router.post("/task", authMiddleware, async (req , res ) => {
     const body = req.body;
     //@ts-ignore
     const userId = req.userId;
 
-    const user = await prisma.user.findFirst({
-        where : {
-            id : userId
-        }
-    })
+    if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    
+    const user = await prisma.user.findFirst({ where: { id: userId } });
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+
     const parseData = createTaskInput.safeParse(body);
-
-    if(!parseData.success){
-        console.log("zod parsedata error")
-        res.status(411).json({
-            error : "Invalid input"
-        })
+    if (!parseData.success) {
+        console.error("Invalid input data");
+        return res.status(400).json({ error: "Invalid input" });
     }
 
-    console.log("Signature : ", parseData.data?.signature)
+    try {
+        const transaction = await connection.getTransaction(parseData.data.signature, {
+            maxSupportedTransactionVersion: 1,
+        });
 
-    //@ts-ignore
-    const transaction = await connection.getTransaction(parseData.data.signature, {
-        maxSupportedTransactionVersion: 1
-    });
+        if (!transaction) {
+            return res.status(411).json({ message: "Invalid transaction signature" });
+        }
 
-    console.log("Transaction :", transaction)
+        const balanceChange = (transaction.meta?.postBalances?.[1] ?? 0) - (transaction.meta?.preBalances?.[1] ?? 0);
+        if (balanceChange !== 100000000) {
+            return res.status(411).json({ message: "Transaction signature/amount incorrect" });
+        }
 
-    if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
-        return res.status(411).json({
-            message: "Transaction signature/amount incorrect"
-        })
-    }
+        const accountKeys = transaction.transaction.message.getAccountKeys();
+        if (accountKeys.get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
+            return res.status(411).json({ message: "Transaction sent to wrong address" });
+        }
 
-    if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
-        return res.status(411).json({
-            message: "Transaction sent to wrong address"
-        })
-    }
+        if (accountKeys.get(0)?.toString() !== user.address) {
+            return res.status(411).json({ message: "Transaction sent from wrong address" });
+        }
 
-    if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
-        return res.status(411).json({
-            message: "Transaction sent from wrong address"
-        })
-    }
+        const response = await prisma.$transaction(async (tx) => {
+            const task = await tx.task.create({
+                data: {
+                    title: parseData.data.title ?? "Choose the best thumbnail",
+                    amount: 1 * TOTAL_DECIMALS,
+                    signature: parseData.data.signature ?? "",
+                    user_id: userId,
+                },
+            });
 
-
-
-    //parse the signature here to ensure the person has paid the amount
-
-    let response = await prisma.$transaction(async (tx)=>{
-
-        const response = await tx.task.create({
-            data :{
-                title : parseData.data?.title?? "Choose the best thumbnail",
-                amount : 1*TOTAL_DECIMALS,
-                signature : parseData.data?.signature?? "",
-                user_id : userId
-            }
-        })
-
-        console.log("response in response : ", response)
-
-        try{
             await tx.option.createMany({
-                data : parseData.data?.options?.map(option=>({
-                    image_url : option.image_url ,
-                    task_id : response.id
-                })) || []
-            })
-        }
-        catch(e){
-            console.log("Error in creating options : ", e)
-        }
+                data: parseData.data.options?.map(option => ({
+                    image_url: option.image_url,
+                    task_id: task.id,
+                })) || [],
+            });
 
-        return response
-    })
+            return task;
+        });
 
-    res.json({
-        id : response.id
-    })
+        res.json({ id: response.id });
 
-})
+    } catch (e) {
+        console.error("Error during task creation:", e);
+        res.status(500).json({ error: "Failed to create task" });
+    }
+});
+
+
 
 
 router.get("/presignedurl",authMiddleware, async (req, res)=>{

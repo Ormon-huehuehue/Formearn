@@ -23,25 +23,32 @@ const NextTask = () => {
 
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState<boolean>(true)
+    const [signedMessage, setSignedMessage] = useState<boolean>(false)
+    const [token, setToken] = useState(null)
 
     useEffect(()=>{
         setLoading(true);
         const fetchTask = async ()=>{
 
             try{
-                const response = await axios.get(`${backendUrl}/v1/worker/nextTask`,{
-                    headers : {
-                        "Authorization" : token
+                if(signedMessage){
+                    const response = await axios.get(`${backendUrl}/v1/worker/nextTask`,{
+                        headers : {
+                            "Authorization" : token
+                        }
+                    })
+                    
+                    if(response){
+                        console.log("Next task : ", response.data)
+                        setCurrentTask(response.data.task)
+                        setLoading(false);
                     }
-                })
-                
-                if(response){
-                    console.log("Next task : ", response.data)
-                    setCurrentTask(response.data.task)
-                    setLoading(false);
+                    else{
+                        console.log("An error occured while fetching the next task")
+                    }
                 }
                 else{
-                    console.log("An error occured while fetching the next task")
+                    console.log("Account has not been verified yet")
                 }
             }
             catch(e){
@@ -53,7 +60,6 @@ const NextTask = () => {
 
         fetchTask()
     },[])
-
 
 
     if(loading){

@@ -5,53 +5,83 @@ import { prisma } from "./user";
 import { workerMiddleware } from "../middleware";
 import { getNextTask } from "../db";
 import { createSubmissioninput } from "../types";
+import { PublicKey } from "@solana/web3.js";
+import { decodeUTF8 } from "tweetnacl-util";
+import nacl from "tweetnacl";
 
 export const jwtSecretWorker = jwtSecret + "worker"
 export const TOTAL_DECIMALS = 1000000000;
 
-
+const PARENT_WALLET_ADDRESS = "8SExAm8QT4bQxCS3WvjsMYtAuGJVG2Bc7ovpYEuWURpP";
 
 const router = Router();
 
+//@ts-ignore
+router.post("/signin", async(req, res) => {
+    console.log("Worker signin initiated")
+    const { publicKey, signature } = req.body;
+    const message = new TextEncoder().encode("Sign into formearn as a worker");
 
-router.post("/signin", async (req,res)=>{
-    console.log("Signin request received")
-    //TODO : Add sign verification logic here
-    const hardCodedWalletAddress = "8EvUD7QiWDznwVh1VwRUncVadSqrC1JZJroVTtbZgQrw"
+    const result = nacl.sign.detached.verify(
+        message,
+        new Uint8Array(signature.data),
+        new PublicKey(publicKey).toBytes(),
+    );
 
-    const existingUser =  await prisma.worker.findFirst({
-        where : {
-            address : hardCodedWalletAddress
+    console.log("Result :", result)
+
+    if (res.headersSent) {
+        console.log("Headers already sent!");
+    }
+
+
+    if (!result) {
+        res.status(411).json({
+            message: "Incorrect signature"
+        })
+
+        return 
+    }
+
+    const existingUser = await prisma.worker.findFirst({
+        where: {
+            address: publicKey
         }
     })
 
-    if(existingUser){
-        console.log("Existing user")
+    if (existingUser) {
         const token = jwt.sign({
-            userId  : existingUser.id
-        }, jwtSecret)
-
-        res.json({token})
-    }
-    else{
-        console.log("Creating a new user")
-        const user = await prisma.worker.create({
-            data : {
-                address : hardCodedWalletAddress,
-                pending_amount : 0,
-                locked_amount : 0
-            }
-        })    
-        
-        
-        const token = jwt.sign({
-            userId : user.id
+            userId: existingUser.id
         }, jwtSecretWorker)
-        
-        res.json({token})
-    }
 
+        res.json({
+            token,
+            amount: existingUser.pending_amount / TOTAL_DECIMALS
+        })
+        
+        return 
+    } else {
+        const user = await prisma.worker.create({
+            data: {
+                address: publicKey,
+                pending_amount: 0,
+                locked_amount: 0
+            }
+        });
+
+        const token = jwt.sign({
+            userId: user.id
+        }, jwtSecretWorker)
+
+        res.json({
+            token,
+            amount: 0
+        })
+
+        return
+    }
 });
+
 
 
 router.get("/nextTask", workerMiddleware, async (req,res)=>{
@@ -64,6 +94,7 @@ router.get("/nextTask", workerMiddleware, async (req,res)=>{
         res.status(411).json({
             message : "No more tasks left for you to review"
         })
+        return 
     }
     else{
         res.status(200).json({
@@ -91,6 +122,7 @@ router.post("/submission", workerMiddleware, async (req,res)=>{
             res.status(411).json({
                 message : "Incorrect task id"
             })
+            return
         }
 
 
@@ -180,6 +212,7 @@ router.post("/payout", workerMiddleware, async (req,res)=>{
         res.status(400).json({
             message : "user not found"
         })
+        return
     }
     else{
         const address = worker?.address;

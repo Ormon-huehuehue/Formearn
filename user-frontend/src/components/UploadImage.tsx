@@ -102,8 +102,8 @@ const UploadImage = () => {
                 options : images.map((image)=>({
                     image_url : image
                 })),
-                signature : "hello",
-                title : title
+                title : title,
+                signature : txSignature
             },
             {
                 headers : {

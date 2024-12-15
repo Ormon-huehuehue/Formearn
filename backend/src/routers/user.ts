@@ -8,16 +8,21 @@ import { authMiddleware } from "../middleware";
 import { createTaskInput } from "../types";
 import { TOTAL_DECIMALS } from "./worker";
 import nacl from "tweetnacl";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { decodeUTF8 } from "tweetnacl-util";
+import { Signature } from "typescript";
 
 
 const router = Router();
 
 export const prisma  = new PrismaClient();
 
+const connection = new Connection(process.env.RPC_URL ?? "")
+
 const access_key = process.env.ACCESS_KEY_ID?? ""
 const secret_key = process.env.SECRET_ACCESS_KEY?? ""
+
+const PARENT_WALLET_ADDRESS = "8SExAm8QT4bQxCS3WvjsMYtAuGJVG2Bc7ovpYEuWURpP";
 
 const s3Client = new S3Client({
     //@ts-ignore
@@ -99,15 +104,50 @@ router.post("/task", authMiddleware, async (req,res)=>{
     //@ts-ignore
     const userId = req.userId;
 
+    const user = await prisma.user.findFirst({
+        where : {
+            id : userId
+        }
+    })
+
     
     const parseData = createTaskInput.safeParse(body);
 
     if(!parseData.success){
         console.log("zod parsedata error")
-            res.status(411).json({
+        res.status(411).json({
             error : "Invalid input"
         })
     }
+
+    console.log("Signature : ", parseData.data?.signature)
+
+    //@ts-ignore
+    const transaction = await connection.getTransaction(parseData.data.signature, {
+        maxSupportedTransactionVersion: 1
+    });
+
+    console.log("Transaction :", transaction)
+
+    if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
+        return res.status(411).json({
+            message: "Transaction signature/amount incorrect"
+        })
+    }
+
+    if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
+        return res.status(411).json({
+            message: "Transaction sent to wrong address"
+        })
+    }
+
+    if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
+        return res.status(411).json({
+            message: "Transaction sent from wrong address"
+        })
+    }
+
+
 
     //parse the signature here to ensure the person has paid the amount
 
@@ -117,7 +157,7 @@ router.post("/task", authMiddleware, async (req,res)=>{
             data :{
                 title : parseData.data?.title?? "Choose the best thumbnail",
                 amount : 1*TOTAL_DECIMALS,
-                signature : parseData.data?.signature?? "signature",
+                signature : parseData.data?.signature?? "",
                 user_id : userId
             }
         })
@@ -189,11 +229,6 @@ router.post("/signin",async  (req,res)=>{
             message: "Incorrect signature"
         })
     }
-
-    console.log("Result :", result)
-
-    console.log("Public key : ",publicKey)
-    console.log("Type of public key : ", typeof(publicKey))
 
     const existingUser =  await prisma.user.findFirst({
         where : {

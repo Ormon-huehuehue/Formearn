@@ -16,7 +16,7 @@ interface Task{
 }
 
 
-const token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTczMzY3MjUyNH0.Vodfd6WE-YYprSLb1K3iRPdvTLULxZpUA75VtIqaGug"
+const token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTczNDExMDU2Nn0.YjD22W7iozJcIBlT57EUjXcCO5OZWE1k5sW23d4P51o"
 
 
 const NextTask = () => {
@@ -28,19 +28,26 @@ const NextTask = () => {
         setLoading(true);
         const fetchTask = async ()=>{
 
-            const response = await axios.get(`${backendUrl}/v1/worker/nextTask`,{
-                headers : {
-                    "Authorization" : token
+            try{
+                const response = await axios.get(`${backendUrl}/v1/worker/nextTask`,{
+                    headers : {
+                        "Authorization" : token
+                    }
+                })
+                
+                if(response){
+                    console.log("Next task : ", response.data)
+                    setCurrentTask(response.data.task)
+                    setLoading(false);
                 }
-            })
-
-            if(response){
-                console.log("Next task : ", response.data)
-                setCurrentTask(response.data.task)
-                setLoading(false);
+                else{
+                    console.log("An error occured while fetching the next task")
+                }
             }
-            else{
-                console.log("An error occured while fetching the next task")
+            catch(e){
+                console.log("Tasks khatam")
+                setLoading(false);
+                setCurrentTask(null)
             }
         }
 
@@ -59,7 +66,7 @@ const NextTask = () => {
 
     if(!currentTask){
         return (
-            <div className = 'min-h-100vh flex justify-center items-center text-black'>
+            <div className = 'min-h-screen flex justify-center items-center text-black font-semibold text-4xl'>
                 Please check back in some time, there are no pending tasks at the moment
             </div>
         )

@@ -41,14 +41,16 @@ const Task = ({taskId}: { taskId : string}) => {
 
 
     useEffect(()=>{
-        fetchTaskDetails(taskId)
+        setInterval(()=>{
+            fetchTaskDetails(taskId)
             .then(data=>{
                 setTaskDetails(data.taskDetails)
                 setResult(data.result)
-
+                
                 console.log("result : ", data.result)
                 console.log("Task Details : ", data.taskDetails)
             })
+        },5000)
     },[taskId])
 
 
@@ -58,7 +60,7 @@ const Task = ({taskId}: { taskId : string}) => {
       <div className = "flex flex-wrap">
         {Object.keys(result || {}).map((optionId)=> 
         //@ts-ignore
-            <TaskComponent imageUrl ={result[optionId].option.image_url} votes = {result[optionId].count}  />
+            <TaskComponent key={optionId} imageUrl ={result[optionId].option.image_url} votes = {result[optionId].count}  />
         )}
       </div>
     </div>

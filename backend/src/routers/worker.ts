@@ -17,7 +17,7 @@ const router = Router();
 router.post("/signin", async (req,res)=>{
     console.log("Signin request received")
     //TODO : Add sign verification logic here
-    const hardCodedWalletAddress = "FXHfqca1fKpFKB5bcNKGAznLqWo1RR2MTtnVcQnLSrEn"
+    const hardCodedWalletAddress = "8EvUD7QiWDznwVh1VwRUncVadSqrC1JZJroVTtbZgQrw"
 
     const existingUser =  await prisma.worker.findFirst({
         where : {
@@ -26,6 +26,7 @@ router.post("/signin", async (req,res)=>{
     })
 
     if(existingUser){
+        console.log("Existing user")
         const token = jwt.sign({
             userId  : existingUser.id
         }, jwtSecret)
@@ -33,6 +34,7 @@ router.post("/signin", async (req,res)=>{
         res.json({token})
     }
     else{
+        console.log("Creating a new user")
         const user = await prisma.worker.create({
             data : {
                 address : hardCodedWalletAddress,
@@ -41,6 +43,7 @@ router.post("/signin", async (req,res)=>{
             }
         })    
         
+
         const token = jwt.sign({
             userId : user.id
         }, jwtSecretWorker)

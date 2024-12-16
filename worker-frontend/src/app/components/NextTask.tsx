@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { backendUrl } from '../../../config/config'
 import axios from 'axios'
+import { publicDecrypt } from 'crypto'
 
 interface Task{
     title : string,
@@ -23,18 +24,16 @@ const NextTask = () => {
 
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState<boolean>(true)
-    const [signedMessage, setSignedMessage] = useState<boolean>(false)
-    const [token, setToken] = useState(null)
+    
 
     useEffect(()=>{
         setLoading(true);
         const fetchTask = async ()=>{
-
+            //use recloil to check if initial signin message has been signed or not and only run this function once it's been signed
             try{
-                if(signedMessage){
                     const response = await axios.get(`${backendUrl}/v1/worker/nextTask`,{
                         headers : {
-                            "Authorization" : token
+                            "Authorization" : localStorage.getItem("token")
                         }
                     })
                     
@@ -46,10 +45,7 @@ const NextTask = () => {
                     else{
                         console.log("An error occured while fetching the next task")
                     }
-                }
-                else{
-                    console.log("Account has not been verified yet")
-                }
+               
             }
             catch(e){
                 console.log("Tasks khatam")
@@ -91,7 +87,7 @@ const NextTask = () => {
                         },
                             {
                             headers : {
-                                "Authorization" : token
+                                "Authorization" : localStorage.getItem("token")
                             }    
                         })
 

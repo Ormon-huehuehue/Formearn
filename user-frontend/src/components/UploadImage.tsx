@@ -161,8 +161,6 @@ const UploadImage = () => {
                 <input placeholder="Select the thumbnail that's thumbnailing" className="text-sm w-full h-7 px-2 py-2 rounded-md text-black"
                 onChange={(e)=>setTitle(e.target.value)}/>
                 <div className= "w-full flex justify-center py-4">
-                    {/* <button type="submit" className= "bg-slate-700 p-5 rounded-md font-mono text-white text-lg"> Submit task</button> */}
-                    {/* add a pay 0.1sol button here */}
                     <div className="flex justify-center">   
                 {!publicKey ? <h1 className=  'py-5 font-mono text-sm text-center font-semibold text-red-400'>Please connect your wallet to start posting new tasks</h1> :null}    
                 {!txSignature && publicKey ? <button onClick={makePayment} type="button" className="mt-4 text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">

@@ -5,7 +5,7 @@ import { prisma } from "./user";
 import { workerMiddleware } from "../middleware";
 import { getNextTask } from "../db";
 import { createSubmissioninput } from "../types";
-import { PublicKey } from "@solana/web3.js";
+import { SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
 import { decodeUTF8 } from "tweetnacl-util";
 import nacl from "tweetnacl";
 
@@ -193,9 +193,6 @@ router.get("/balance", workerMiddleware, async (req, res)=>{
         pendingAmount : worker?.pending_amount,
         lockedAmount : worker?.locked_amount
     })
-
-
-
 })
 
 
@@ -217,7 +214,16 @@ router.post("/payout", workerMiddleware, async (req,res)=>{
     else{
         const address = worker?.address;
 
-        const txnId = "0x123123";
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey : new PublicKey("8SExAm8QT4bQxCS3WvjsMYtAuGJVG2Bc7ovpYEuWURpP"),
+                toPubkey : new PublicKey(address),
+                lamports : 100000000
+    
+            })
+        )
+
+        const txnId = transaction.signature 
 
         //add a lock here
         await prisma.$transaction(async tx=>{
